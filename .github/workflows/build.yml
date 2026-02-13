@@ -1,0 +1,57 @@
+name: Build Yocto Image
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y git python3 build-essential chrpath diffstat gawk texinfo wget zstd liblz4-tool curl
+    
+    - name: Setup repo tool
+      run: |
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        export PATH=~/bin:$PATH
+        echo "PATH=$PATH" >> $GITHUB_ENV
+    
+    - name: Setup Yocto environment
+      run: |
+        export PATH=~/bin:$PATH
+        cd $GITHUB_WORKSPACE
+        MACHINE=imx7d-pico DISTRO=fslc-wayland source setup-environment build
+    
+    - name: Configure WiFi & Bluetooth
+      run: |
+        cat >> build/conf/local.conf << 'EOF'
+        
+        # WiFi and Bluetooth support
+        MACHINE_FEATURES += "wifi bluetooth"
+        IMAGE_INSTALL += "wireless-tools wpa-supplicant bluez5 weston"
+        PSEUDO_DISABLED = "1"
+        EOF
+    
+    - name: Build Yocto image
+      run: |
+        export PATH=~/bin:$PATH
+        cd $GITHUB_WORKSPACE/build
+        bitbake core-image-minimal
+    
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: yocto-image
+        path: build/tmp/deploy/images/
+        retention-days: 30
