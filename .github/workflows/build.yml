@@ -7,54 +7,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install dependencies
+    - name: Check environment
       run: |
-        sudo apt update
-        sudo apt install -y git python3 build-essential chrpath diffstat gawk texinfo wget zstd liblz4-tool curl
+        df -h
+        free -h
+        uname -a
     
-    - name: Setup repo tool
+    - name: Test repo tool
       run: |
         mkdir -p ~/bin
-        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        curl -o ~/bin/repo https://storage.googleapis.com/git-repo-downloads/repo
         chmod a+x ~/bin/repo
-        export PATH=~/bin:$PATH
-        echo "PATH=~/bin:$PATH" >> $GITHUB_ENV
-    
-    - name: Initialize Yocto
-      run: |
-        export PATH=~/bin:$PATH
-        cd $GITHUB_WORKSPACE
-        repo init -u https://github.com/TechNexion/tn-imx-yocto-manifest -b scarthgap_6.6.y-stable -m imx-6.6.52-2.2.2.xml
-        repo sync
-    
-    - name: Setup build environment
-      run: |
-        cd $GITHUB_WORKSPACE
-        MACHINE=imx7d-pico DISTRO=fslc-wayland source setup-environment build
-    
-    - name: Configure WiFi & Bluetooth
-      run: |
-        cat >> $GITHUB_WORKSPACE/build/conf/local.conf << 'EOF'
-        
-        # WiFi and Bluetooth support
-        MACHINE_FEATURES += "wifi bluetooth"
-        IMAGE_INSTALL += "wireless-tools wpa-supplicant bluez5 weston"
-        PSEUDO_DISABLED = "1"
-        EOF
-    
-    - name: Build image
-      run: |
-        cd $GITHUB_WORKSPACE/build
-        bitbake core-image-minimal
-    
-    - name: Upload artifacts
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: yocto-image
-        path: build/tmp/deploy/images/
-        retention-days: 30
+        ~/bin/repo --version
