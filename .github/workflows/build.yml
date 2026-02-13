@@ -38,8 +38,9 @@ jobs:
     
     - name: Configure WiFi & Bluetooth
       run: |
-        cat >> build/conf/local.conf << 'EOF'
+        cat >> $GITHUB_WORKSPACE/build/conf/local.conf << 'EOF'
         
+        # WiFi and Bluetooth support
         MACHINE_FEATURES += "wifi bluetooth"
         IMAGE_INSTALL += "wireless-tools wpa-supplicant bluez5 weston"
         PSEUDO_DISABLED = "1"
