@@ -1,0 +1,7 @@
+.repo/
+build/tmp/
+downloads/
+sstate-cache/
+.git/
+*.pyc
+__pycache__/
